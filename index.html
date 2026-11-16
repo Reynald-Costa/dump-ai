@@ -231,11 +231,7 @@ img{max-width:100%}
     <button class="btn btn-text" id="clear" type="button">Limpar</button>
     <span class="spacer"></span>
     <label class="field" for="picks">Quantas postar
-      <select id="picks">
-        <option value="3" selected>3 fotos</option>
-        <option value="6">6 fotos</option>
-        <option value="9">9 fotos</option>
-      </select>
+      <select id="picks"></select>
     </label>
   </div>
   <p class="msg" id="msg" role="status" hidden></p>
@@ -265,6 +261,7 @@ img{max-width:100%}
 <script>
 (() => {
   const MAX_PHOTOS = 30;
+  const MAX_PICKS = 25;
   const state = { photos: [], picks: 3, selectedId: null };
   let nextId = 1;
   const $ = (id) => document.getElementById(id);
@@ -533,6 +530,8 @@ img{max-width:100%}
   $('file').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
   $('clear').addEventListener('click', clearAll);
   $('samples').addEventListener('click', async () => { clearAll(); await loadSamples(); });
+  $('picks').innerHTML = Array.from({ length: MAX_PICKS }, (_, i) => i + 1)
+    .map((n) => `<option value="${n}"${n === state.picks ? ' selected' : ''}>${n} ${n === 1 ? 'foto' : 'fotos'}</option>`).join('');
   $('picks').addEventListener('change', (e) => { state.picks = +e.target.value; pick(); render(); });
   $('frames').addEventListener('click', (e) => {
     const b = e.target.closest('.frame'); if (!b) return;
