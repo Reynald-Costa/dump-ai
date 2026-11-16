@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Dump.ai: envie as fotos que você separou e veja quais postar no Instagram, com nota e motivo para cada uma.">
+<meta name="theme-color" content="#f6f4f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111111'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Arial,sans-serif' font-weight='700' font-size='20' fill='%23ffffff'%3Ed%3C/text%3E%3C/svg%3E">
+<title>Dump.ai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Jost:wght@400;500;600;700&display=swap">
+<style>
+/* Paleta e fontes seguem o repositório de referência (Orient Lara), sem o vermelho: o destaque é o preto #111111
+   (no tema escuro, o branco). Jost nos títulos, DM Sans no texto. Tema escuro usa #141414, #1d1d1d e #2c2c2c. */
+:root{
+  --page:#f6f4f2; --surface:#ffffff; --surface-2:#f6f4f2; --cell-old:#ece9e6;
+  --ink:#1c1c1c; --strong:#111111; --muted:#5f6368; --line:#e7e4e2; --line-hover:#cfc9c4;
+  --photo-bg:#141414; --on-accent:#ffffff;
+  --accent:#111111; --accent-hover:#2e2e2e; --accent-text:#111111; --accent-tint:rgba(17,17,17,.08);
+  --msg-bg:#f6f4f2; --msg-line:#cfc9c4;
+  --shadow-sm:0 8px 24px -14px rgba(0,0,0,.35); --shadow-accent:0 12px 26px -12px rgba(0,0,0,.5);
+  --radius:14px; --radius-sm:10px;
+  --font-body:"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-head:"Jost", var(--font-body);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --page:#141414; --surface:#1d1d1d; --surface-2:#252525; --cell-old:#262626;
+  --ink:#f2f0ee; --strong:#ffffff; --muted:#a3a7ad; --line:#2c2c2c; --line-hover:#4a4a4a;
+  --photo-bg:#0d0d0d;
+  --accent:#ffffff; --accent-hover:#e7e4e2; --accent-text:#ffffff; --accent-tint:rgba(255,255,255,.12); --on-accent:#111111;
+  --msg-bg:#252525; --msg-line:#4a4a4a;
+  --shadow-sm:0 8px 24px -14px rgba(0,0,0,.9); --shadow-accent:0 12px 26px -12px rgba(0,0,0,.9);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --page:#141414; --surface:#1d1d1d; --surface-2:#252525; --cell-old:#262626;
+  --ink:#f2f0ee; --strong:#ffffff; --muted:#a3a7ad; --line:#2c2c2c; --line-hover:#4a4a4a;
+  --photo-bg:#0d0d0d;
+  --accent:#ffffff; --accent-hover:#e7e4e2; --accent-text:#ffffff; --accent-tint:rgba(255,255,255,.12); --on-accent:#111111;
+  --msg-bg:#252525; --msg-line:#4a4a4a;
+  --shadow-sm:0 8px 24px -14px rgba(0,0,0,.9); --shadow-accent:0 12px 26px -12px rgba(0,0,0,.9);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;padding-block:0 48px}
+.container{max-width:1200px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3{font-family:var(--font-head);font-weight:600;line-height:1.15;margin:0;color:var(--strong)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Header */
+.site-header{background:var(--surface);border-bottom:1px solid var(--line)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-weight:600;font-size:21px;color:var(--strong)}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:19px;font-weight:700;line-height:1}
+.header-right{display:flex;align-items:center;gap:14px}
+.header-note{font-size:13px;color:var(--muted)}
+.theme-toggle{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:var(--font-head);font-weight:500;font-size:14px;cursor:pointer}
+.theme-toggle:hover{border-color:var(--ink)}
+.theme-toggle svg{width:16px;height:16px;flex:none}
+
+/* Page head */
+.page-head{padding-block:32px 22px}
+.page-head h1{font-size:clamp(26px,3.6vw,36px)}
+.page-head h1::after{content:"";display:block;width:58px;height:4px;border-radius:3px;background:var(--accent);margin-top:14px}
+.page-head p{color:var(--muted);margin:14px 0 0;max-width:62ch;font-size:16px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-head);font-weight:600;font-size:15px;padding:10px 24px;border-radius:999px;border:2px solid transparent;cursor:pointer;white-space:nowrap;transition:background .2s,border-color .2s,color .2s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-outline{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn-outline:hover{border-color:var(--ink)}
+.btn-text{background:none;border:0;color:var(--muted);padding-inline:8px}
+.btn-text:hover{color:var(--accent-text)}
+
+/* Toolbar */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.toolbar .spacer{flex:1}
+.field{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.field select{padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.field select:focus{border-color:var(--accent)}
+.msg{font-size:14px;color:var(--accent-text);background:var(--msg-bg);border:1px solid var(--msg-line);border-radius:var(--radius-sm);padding:10px 14px;margin:0 0 12px}
+.summary{font-size:14px;color:var(--muted);margin:0 0 14px;min-height:22px}
+.summary b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Layout */
+.app{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;min-width:0}
+.card h2{font-size:18px;margin-bottom:14px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px}
+.card-head h2{margin:0}
+.card-head span{font-size:14px;color:var(--muted)}
+
+/* Photo grid */
+#sheet.drag{outline:2px dashed var(--accent);outline-offset:-8px}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
+.frame{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);color:var(--ink)}
+.frame:hover{border-color:var(--line-hover)}
+.frame[aria-pressed="true"]{box-shadow:0 0 0 4px var(--line-hover)}
+.frame.picked{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.frame.picked[aria-pressed="true"]{box-shadow:0 0 0 1px var(--accent),0 0 0 5px var(--line-hover)}
+.frame:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.thumb{position:relative;aspect-ratio:1;width:100%;max-width:100%;background:var(--photo-bg);overflow:hidden}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.thumb.dim img{opacity:.45}
+.rank{position:absolute;top:8px;left:8px;background:var(--accent);color:var(--on-accent);font-family:var(--font-head);font-weight:600;font-size:13px;padding:2px 10px;border-radius:999px}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.85);font-size:13px;background:rgba(0,0,0,.35)}
+.frame-body{padding:10px 12px 12px;display:grid;gap:6px}
+.fname{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.score{font-family:var(--font-head);font-weight:600;font-size:22px;line-height:1;color:var(--strong);font-variant-numeric:tabular-nums}
+.score small{font-family:var(--font-body);font-weight:400;font-size:12px;color:var(--muted);margin-left:2px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.chip--postar{background:var(--accent);color:var(--on-accent)}
+.chip--reserva{background:var(--accent-tint);color:var(--accent-text)}
+.chip--repetida,.chip--evitar{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.empty{grid-column:1/-1;text-align:center;padding:56px 16px;border:2px dashed var(--line);border-radius:var(--radius-sm);background:var(--surface-2);display:grid;gap:8px;justify-items:center}
+.empty h3{font-size:19px}
+.empty p{margin:0;color:var(--muted);max-width:44ch}
+.empty .btn{margin-top:10px}
+
+/* Rail */
+.rail{display:grid;gap:20px;position:sticky;top:max(16px, env(safe-area-inset-top, 0px))}
+.profile{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--strong);color:var(--surface);display:grid;place-items:center;font-family:var(--font-head);font-weight:600;font-size:14px}
+.handle{font-weight:700;font-size:14px;color:var(--strong)}
+.handle small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;border-radius:6px;overflow:hidden}
+.cell{aspect-ratio:3/4;max-width:100%;background:var(--surface-2);position:relative;overflow:hidden}
+.cell img{width:100%;height:100%;object-fit:cover;display:block}
+.cell .n{position:absolute;top:5px;left:5px;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:700;min-width:20px;height:20px;padding-inline:5px;border-radius:999px;display:grid;place-items:center}
+.cell.old{background:var(--cell-old)}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+.detail-img{background:var(--photo-bg);border-radius:var(--radius-sm);display:grid;place-items:center;height:220px;overflow:hidden;margin-bottom:14px}
+.detail-img img{max-height:220px;max-width:100%;display:block}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.dname{font-weight:700;font-size:15px;overflow-wrap:anywhere;min-width:0;color:var(--strong)}
+.dname small{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:2px}
+.dscore{text-align:right;flex:none}
+.dscore b{display:block;font-family:var(--font-head);font-weight:600;font-size:36px;line-height:1;color:var(--strong);font-variant-numeric:tabular-nums}
+.dscore .chip{margin-top:6px}
+.metrics{display:grid;gap:9px;margin:0 0 16px;padding:0;list-style:none}
+.metric{display:grid;grid-template-columns:92px 1fr 28px;gap:10px;align-items:center;font-size:14px}
+.metric span:last-child{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.bar{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--ink)}
+.bar i.lo{background:var(--muted)}
+.reasons{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px}
+.reasons li{padding-left:18px;position:relative}
+.reasons li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;border-radius:2px;background:var(--ink)}
+.reasons .neg::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.reasons .neu::before{background:var(--line-hover)}
+.scope{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+
+@media (max-width:960px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+}
+@media (max-width:560px){
+  .frames{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .toolbar .spacer{display:none}
+  .card{padding:16px}
+  .header-note{display:none}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+<style>
+/* Base que o visualizador do Claude aplicava sozinho */
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top, 0px);padding-bottom:env(safe-area-inset-bottom, 0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">d</span>Dump.ai</div>
+    <div class="header-right">
+      <span class="header-note">Versão de teste</span>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false"></button>
+    </div>
+  </div>
+</header>
+
+<script>
+(() => {
+  const KEY = 'dumpai-theme';
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  const sysDark = () => !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  const current = () => root.getAttribute('data-theme') || (sysDark() ? 'dark' : 'light');
+  function paint() {
+    const dark = current() === 'dark';
+    btn.innerHTML = dark ? `${SUN}<span>Tema claro</span>` : `${MOON}<span>Tema escuro</span>`;
+    btn.setAttribute('aria-pressed', String(dark));
+    btn.setAttribute('aria-label', dark ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
+  }
+  try { const saved = localStorage.getItem(KEY); if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved); } catch (e) {}
+  btn.addEventListener('click', () => {
+    const next = current() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    paint();
+  });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', paint);
+  new MutationObserver(paint).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  paint();
+})();
+</script>
+
+<main class="container">
+  <div class="page-head">
+    <h1>Quais fotos postar?</h1>
+  </div>
+
+  <div class="toolbar">
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <button class="btn btn-primary" id="add" type="button">Adicionar fotos</button>
+    <button class="btn btn-outline" id="samples" type="button">Usar fotos de exemplo</button>
+    <button class="btn btn-text" id="clear" type="button">Limpar</button>
+    <span class="spacer"></span>
+    <label class="field" for="picks">Quantas postar
+      <select id="picks">
+        <option value="3" selected>3 fotos</option>
+        <option value="6">6 fotos</option>
+        <option value="9">9 fotos</option>
+      </select>
+    </label>
+  </div>
+  <p class="msg" id="msg" role="status" hidden></p>
+  <p class="summary" id="summary"></p>
+
+  <div class="app">
+    <section class="card" id="sheet" aria-labelledby="sheetTitle">
+      <div class="card-head"><h2 id="sheetTitle">Suas fotos</h2><span id="sheetCount"></span></div>
+      <div class="frames" id="frames"></div>
+    </section>
+
+    <aside class="rail">
+      <section class="card">
+        <h2>Prévia do perfil</h2>
+        <div class="profile">
+          <div class="avatar">SM</div>
+          <div class="handle">@sua.marca<small>Grade com as fotos recomendadas</small></div>
+        </div>
+        <div class="grid" id="feed"></div>
+        <p class="note">Miniaturas em 3:4, como no perfil do Instagram.</p>
+      </section>
+      <section class="card" id="detail"></section>
+    </aside>
+  </div>
+</main>
+
+<script>
+(() => {
+  const MAX_PHOTOS = 30;
+  const state = { photos: [], picks: 3, selectedId: null };
+  let nextId = 1;
+  const $ = (id) => document.getElementById(id);
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wait = (ms) => new Promise((r) => setTimeout(r, reduceMotion ? 0 : ms));
+  const loadImage = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+
+  /* ---------------- Análise da imagem ---------------- */
+  function analyze(p) {
+    const s = Math.min(1, 256 / Math.max(p.w, p.h));
+    const w = Math.max(16, Math.round(p.w * s)), h = Math.max(16, Math.round(p.h * s));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(p.img, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data, n = w * h;
+    const lum = new Float32Array(n), hist = new Float32Array(32);
+    let sL = 0, sL2 = 0, sS = 0, clipHi = 0, clipLo = 0;
+    for (let i = 0; i < n; i++) {
+      const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
+      const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      lum[i] = L; sL += L; sL2 += L * L;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx === 0 ? 0 : (mx - mn) / mx;
+      sS += sat;
+      if (L > 0.96) clipHi++; if (L < 0.04) clipLo++;
+      let hue = 0;
+      if (mx !== mn) {
+        if (mx === r) hue = ((g - b) / (mx - mn)) % 6; else if (mx === g) hue = (b - r) / (mx - mn) + 2; else hue = (r - g) / (mx - mn) + 4;
+        hue = (hue * 60 + 360) % 360;
+      }
+      const hb = sat < 0.15 ? 0 : 1 + Math.min(6, Math.floor(hue / 360 * 7));
+      hist[hb * 4 + Math.min(3, Math.floor(L * 4))]++;
+    }
+    for (let i = 0; i < 32; i++) hist[i] /= n;
+    const mean = sL / n, std = Math.sqrt(Math.max(0, sL2 / n - mean * mean));
+    let lS = 0, lS2 = 0, cnt = 0, gx = 0, gy = 0, gw = 0;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const lap = 4 * lum[i] - lum[i - 1] - lum[i + 1] - lum[i - w] - lum[i + w];
+      lS += lap; lS2 += lap * lap; cnt++;
+      const g = Math.abs(lum[i + 1] - lum[i - 1]) + Math.abs(lum[i + w] - lum[i - w]);
+      const g2 = g * g; gw += g2; gx += g2 * x; gy += g2 * y;
+    }
+    const lapVar = Math.max(1e-7, lS2 / cnt - (lS / cnt) ** 2);
+    // dHash 9x8 para detectar fotos repetidas
+    const hc = document.createElement('canvas'); hc.width = 9; hc.height = 8;
+    const hx = hc.getContext('2d', { willReadFrequently: true }); hx.drawImage(p.img, 0, 0, 9, 8);
+    const hd = hx.getImageData(0, 0, 9, 8).data, hash = [];
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      const a = (y * 9 + x) * 4, b = a + 4;
+      hash.push(hd[a] + hd[a + 1] + hd[a + 2] > hd[b] + hd[b + 1] + hd[b + 2] ? 1 : 0);
+    }
+    return { mean, std, sat: sS / n, clip: (clipHi + clipLo) / n, clipHi: clipHi / n, lapVar,
+      cx: gw ? gx / gw / w : 0.5, cy: gw ? gy / gw / h : 0.5, hist, hash };
+  }
+
+  function isDup(a, b) {
+    let ham = 0; for (let i = 0; i < 64; i++) if (a.m.hash[i] !== b.m.hash[i]) ham++;
+    let inter = 0; for (let i = 0; i < 32; i++) inter += Math.min(a.m.hist[i], b.m.hist[i]);
+    return ham <= 10 || (ham <= 18 && inter > 0.72);
+  }
+
+  function formatInfo(w, h) {
+    const r = w / h;
+    if (r >= 0.74 && r <= 0.81) return { s: 1, label: r < 0.775 ? '3:4' : '4:5', txt: 'ocupa o máximo de espaço no feed', pos: true };
+    if (r > 0.81 && r <= 1.02) return { s: 0.88, label: '1:1', txt: 'quadrada, funciona bem no feed', pos: true };
+    if (r > 1.02 && r <= 1.95) return { s: 0.62, label: 'horizontal', txt: 'aparece menor no feed; considere recortar em 4:5', pos: false };
+    if (r > 1.95) return { s: 0.45, label: 'panorâmica', txt: 'será cortada no feed', pos: false };
+    return { s: 0.5, label: '9:16', txt: 'vertical demais para o feed; melhor para Stories ou Reels', pos: false };
+  }
+
+  function score(p, maxLap) {
+    const m = p.m;
+    const absSharp = clamp((Math.log10(m.lapVar) + 5) / 1.5);
+    const relSharp = clamp(1 + Math.log10(m.lapVar / maxLap) / 2);
+    const sharp = Math.min(absSharp, relSharp);
+    let exposure = clamp(1 - (Math.abs(m.mean - 0.48) - 0.1) / 0.26);
+    exposure = clamp(exposure - clamp((m.clip - 0.05) * 2, 0, 0.45));
+    const contrast = m.std < 0.15 ? clamp(m.std / 0.15) : m.std > 0.32 ? clamp(1 - (m.std - 0.32) / 0.2) : 1;
+    const color = m.sat < 0.12 ? 0.3 + m.sat / 0.12 * 0.3 : m.sat < 0.45 ? 0.6 + (m.sat - 0.12) / 0.33 * 0.4 : m.sat < 0.78 ? 1 : 0.85;
+    const thirds = [[1 / 3, 1 / 3], [2 / 3, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 2 / 3]];
+    const dT = Math.min(...thirds.map(([x, y]) => Math.hypot(m.cx - x, m.cy - y)));
+    const dC = Math.hypot(m.cx - 0.5, m.cy - 0.5);
+    const comp = Math.max(0.35, clamp(1 - dT / 0.28), 0.78 * clamp(1 - dC / 0.2));
+    const fmt = formatInfo(p.w, p.h);
+    const res = clamp(Math.min(p.w, p.h) / 1080, 0.3, 1);
+    const crit = { sharp, exposure, contrast, color, comp, format: fmt.s, res };
+    const W = { sharp: 0.25, exposure: 0.2, contrast: 0.12, color: 0.13, comp: 0.12, format: 0.12, res: 0.06 };
+    let total = 0; for (const k in W) total += W[k] * crit[k];
+    p.crit = crit; p.fmt = fmt; p.score = Math.round(total * 100);
+  }
+
+  function reasons(p) {
+    const m = p.m, c = p.crit, out = [];
+    if (p.dupOf) out.push(['neg', `Muito parecida com “${p.dupOf.name}”, que teve nota maior. Postar as duas repete o feed.`]);
+    if (c.sharp >= 0.7) out.push(['pos', 'Nítida, com bons detalhes']);
+    else if (c.sharp < 0.4) out.push(['neg', 'Parece tremida ou fora de foco']);
+    else out.push(['neu', 'Nitidez razoável']);
+    if (m.clipHi > 0.08) out.push(['neg', `${Math.round(m.clipHi * 100)}% da imagem está estourada (branco sem detalhe)`]);
+    else if (m.mean < 0.3) out.push(['neg', `Escura. Clarear cerca de +${Math.max(0.3, Math.log2(0.46 / Math.max(m.mean, 0.02))).toFixed(1).replace('.', ',')} EV`]);
+    else if (m.mean > 0.68) out.push(['neg', 'Clara demais, aparência lavada']);
+    else out.push(['pos', 'Exposição equilibrada']);
+    if (c.contrast < 0.55) out.push(['neg', 'Pouco contraste, tende a sumir no feed']);
+    if (m.sat >= 0.4) out.push(['pos', 'Cores vivas, chamam atenção na rolagem']);
+    else if (m.sat < 0.15) out.push(['neu', 'Cores apagadas ou quase P&B']);
+    if (c.comp >= 0.8) out.push(['pos', 'Ponto de interesse perto da regra dos terços']);
+    out.push([p.fmt.pos ? 'pos' : 'neg', `Formato ${p.fmt.label}: ${p.fmt.txt}`]);
+    if (c.res < 1) out.push(['neg', `Resolução baixa (${p.w}×${p.h}). O Instagram usa 1080 px de largura`]);
+    return out;
+  }
+
+  function pick() {
+    const ready = state.photos.filter((p) => p.m);
+    if (!ready.length) return;
+    const maxLap = Math.max(...ready.map((p) => p.m.lapVar));
+    ready.forEach((p) => score(p, maxLap));
+    const sorted = [...ready].sort((a, b) => b.score - a.score);
+    const kept = [];
+    let rank = 0;
+    for (const p of sorted) {
+      p.dupOf = kept.find((q) => isDup(p, q)) || null;
+      p.rank = null;
+      if (!p.dupOf) kept.push(p);
+      if (p.dupOf) p.status = 'repetida';
+      else if (rank < state.picks && p.score >= 55) { p.rank = ++rank; p.status = 'postar'; }
+      else p.status = p.score >= 62 ? 'reserva' : 'evitar';
+    }
+    if (!state.selectedId || !state.photos.some((p) => p.id === state.selectedId)) {
+      state.selectedId = (sorted.find((p) => p.rank === 1) || sorted[0]).id;
+    }
+  }
+
+  /* ---------------- Renderização ---------------- */
+  const STATUS = { postar: 'Postar', reserva: 'Reserva', repetida: 'Repetida', evitar: 'Evitar' };
+  const chipText = (p) => (p.rank ? `Postar em ${p.rank}º` : STATUS[p.status]);
+
+  function render() {
+    const frames = $('frames');
+    const ph = state.photos;
+    $('sheetCount').textContent = ph.length ? `${ph.length} ${ph.length === 1 ? 'foto' : 'fotos'}` : '';
+    if (!ph.length) {
+      frames.innerHTML = `<div class="empty"><h3>Nenhuma foto ainda</h3><p>Arraste as fotos para cá ou escolha do seu computador ou celular. JPG ou PNG, até ${MAX_PHOTOS} por vez.</p><button class="btn btn-primary" type="button" data-action="add">Adicionar fotos</button></div>`;
+    } else {
+      const order = ph.every((p) => p.m) ? [...ph].sort((a, b) => (a.rank || 99) - (b.rank || 99) || b.score - a.score) : ph;
+      frames.innerHTML = order.map((p) => {
+        const done = !!p.status;
+        return `<button class="frame${p.rank ? ' picked' : ''}" type="button" data-id="${p.id}" aria-pressed="${p.id === state.selectedId}" aria-label="${esc(p.name)}${done ? `, nota ${p.score}, ${chipText(p)}` : ''}">
+          <div class="thumb${done && (p.status === 'evitar' || p.status === 'repetida') ? ' dim' : ''}">
+            <img src="${p.url}" alt="">
+            ${p.rank ? `<span class="rank">${p.rank}º</span>` : ''}
+            ${!done ? '<span class="loading">Analisando…</span>' : ''}
+          </div>
+          <div class="frame-body">
+            <span class="fname">${esc(p.name)}</span>
+            ${done ? `<div class="frow"><span class="score">${p.score}<small>/100</small></span><span class="chip chip--${p.status}">${STATUS[p.status]}</span></div>` : ''}
+          </div>
+        </button>`;
+      }).join('');
+    }
+    renderSummary(); renderFeed(); renderDetail();
+  }
+
+  function renderSummary() {
+    const done = state.photos.filter((p) => p.status);
+    if (!done.length) { $('summary').innerHTML = ''; return; }
+    const c = (s) => done.filter((p) => p.status === s).length;
+    const parts = [`<b>${done.length}</b> fotos analisadas`, `<b>${c('postar')}</b> para postar`];
+    if (c('reserva')) parts.push(`<b>${c('reserva')}</b> na reserva`);
+    if (c('repetida')) parts.push(`<b>${c('repetida')}</b> repetida${c('repetida') > 1 ? 's' : ''}`);
+    if (c('evitar')) parts.push(`<b>${c('evitar')}</b> para evitar`);
+    $('summary').innerHTML = parts.join(', ') + '.';
+  }
+
+  function renderFeed() {
+    const picks = state.photos.filter((p) => p.rank).sort((a, b) => a.rank - b.rank);
+    const total = Math.max(9, Math.ceil(picks.length / 3) * 3 + 3);
+    let html = picks.map((p) => `<div class="cell"><img src="${p.url}" alt="${esc(p.name)}"><span class="n">${p.rank}º</span></div>`).join('');
+    for (let i = picks.length; i < total; i++) html += '<div class="cell old" aria-hidden="true"></div>';
+    $('feed').innerHTML = html;
+  }
+
+  function renderDetail() {
+    const p = state.photos.find((x) => x.id === state.selectedId && x.status);
+    const el = $('detail');
+    if (!p) { el.innerHTML = '<h2>Detalhe da foto</h2><p class="note" style="margin:0">Clique numa foto para ver a nota de cada critério e o motivo da recomendação.</p>'; return; }
+    const c = p.crit;
+    const rows = [['Nitidez', c.sharp], ['Exposição', c.exposure], ['Contraste', c.contrast], ['Cor', c.color], ['Composição', c.comp], ['Formato', c.format], ['Resolução', c.res]];
+    el.innerHTML = `<h2>Detalhe da foto</h2>
+      <div class="detail-img"><img src="${p.url}" alt="${esc(p.name)}"></div>
+      <div class="dhead">
+        <div class="dname">${esc(p.name)}<small>${p.w}×${p.h} px, formato ${p.fmt.label}</small></div>
+        <div class="dscore"><b>${p.score}</b><span class="chip chip--${p.status}">${chipText(p)}</span></div>
+      </div>
+      <ul class="metrics">${rows.map(([k, v]) => { const pct = Math.round(v * 100); return `<li class="metric"><span>${k}</span><span class="bar"><i class="${pct < 45 ? 'lo' : ''}" style="width:${pct}%"></i></span><span>${pct}</span></li>`; }).join('')}</ul>
+      <ul class="reasons">${reasons(p).map(([t, s]) => `<li class="${t}">${esc(s)}</li>`).join('')}</ul>
+      <p class="scope">Nesta versão a nota considera só a qualidade técnica da foto, não o conteúdo.</p>`;
+  }
+
+  function showMsg(t) { const m = $('msg'); m.textContent = t; m.hidden = !t; }
+
+  /* ---------------- Fluxo ---------------- */
+  let running = false;
+  async function analyzeAll() {
+    if (running) return; running = true;
+    for (const p of state.photos) {
+      if (p.m) continue;
+      render();
+      await wait(140);
+      try { p.m = analyze(p); } catch (e) { p.m = null; }
+    }
+    state.photos = state.photos.filter((p) => p.m);
+    pick(); render();
+    running = false;
+    if (state.photos.some((p) => !p.m)) analyzeAll();
+  }
+
+  // Lê a foto pelo endereço temporário (blob:). Alguns visualizadores, como a pré-visualização
+  // de HTML do iPhone, bloqueiam esse endereço; nesse caso lê o arquivo como data: URL.
+  async function readImage(f) {
+    let url = null;
+    try {
+      url = URL.createObjectURL(f);
+      return { img: await loadImage(url), url };
+    } catch {
+      if (url) URL.revokeObjectURL(url);
+    }
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.readAsDataURL(f);
+    });
+    return { img: await loadImage(dataUrl), url: dataUrl };
+  }
+
+  async function addFiles(files) {
+    showMsg('');
+    const room = MAX_PHOTOS - state.photos.length;
+    const list = [...files].slice(0, Math.max(0, room));
+    const heic = [], bad = [];
+    if (files.length > room) showMsg(`Limite de ${MAX_PHOTOS} fotos por análise. As demais foram ignoradas.`);
+    for (const f of list) {
+      try {
+        const { img, url } = await readImage(f);
+        state.photos.push({ id: nextId++, name: f.name, url, img, w: img.naturalWidth, h: img.naturalHeight });
+      } catch {
+        (/heic|heif/i.test(f.type) || /\.(heic|heif|dng|raw|cr2|nef|arw)$/i.test(f.name) ? heic : bad).push(f.name);
+      }
+    }
+    const names = (arr) => arr.map((b) => `“${b}”`).join(', ');
+    const msgs = [];
+    if (heic.length) msgs.push(`Não foi possível abrir ${names(heic)}. Fotos HEIC ou RAW ainda não são aceitas; exporte como JPG ou PNG.`);
+    if (bad.length) msgs.push(`Não foi possível ler ${names(bad)}. Se você abriu esta página pela pré-visualização de um app (Arquivos, WhatsApp, e-mail), abra no Safari ou no Chrome e tente de novo.`);
+    if (msgs.length) showMsg(msgs.join(' '));
+    for (const p of state.photos) if (!p.m) p.status = null;
+    await analyzeAll();
+  }
+
+  function clearAll() {
+    state.photos.forEach((p) => { if (!p.sample) URL.revokeObjectURL(p.url); });
+    state.photos = []; state.selectedId = null; showMsg(''); render();
+  }
+
+  $('add').addEventListener('click', () => $('file').click());
+  $('file').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+  $('clear').addEventListener('click', clearAll);
+  $('samples').addEventListener('click', async () => { clearAll(); await loadSamples(); });
+  $('picks').addEventListener('change', (e) => { state.picks = +e.target.value; pick(); render(); });
+  $('frames').addEventListener('click', (e) => {
+    const b = e.target.closest('.frame'); if (!b) return;
+    state.selectedId = +b.dataset.id; render();
+    if (window.innerWidth <= 980) $('detail').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  });
+  const sheet = $('sheet');
+  ['dragenter', 'dragover'].forEach((t) => sheet.addEventListener(t, (e) => { e.preventDefault(); sheet.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach((t) => sheet.addEventListener(t, (e) => { e.preventDefault(); sheet.classList.remove('drag'); }));
+  sheet.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
+
+  /* ---------------- Fotos de exemplo (geradas no navegador) ---------------- */
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const lg = (ctx, x0, y0, x1, y1, stops) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, c]) => g.addColorStop(o, c)); return g; };
+  const circle = (ctx, x, y, r, fill) => { ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+  const ellipse = (ctx, x, y, rx, ry, rot, fill) => { ctx.fillStyle = fill; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fill(); };
+
+  function sunset(ctx, w, h, R, shift = 0) {
+    const hz = h * 0.6;
+    ctx.fillStyle = lg(ctx, 0, 0, 0, hz, [[0, '#24305e'], [0.45, '#a8517a'], [0.8, '#f08a4b'], [1, '#fcd27f']]); ctx.fillRect(0, 0, w, hz);
+    const sx = w * 0.66 + shift, sy = hz - h * 0.05, sr = w * 0.085;
+    const rg = ctx.createRadialGradient(sx, sy, sr * 0.3, sx, sy, sr * 4); rg.addColorStop(0, 'rgba(255,236,170,.85)'); rg.addColorStop(1, 'rgba(255,200,120,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, w, hz);
+    circle(ctx, sx, sy, sr, '#fff1c4');
+    for (let i = 0; i < 6; i++) ellipse(ctx, R() * w, h * (0.12 + R() * 0.3), w * (0.12 + R() * 0.15), h * 0.008 + R() * h * 0.01, 0, 'rgba(110,50,85,.55)');
+    ctx.fillStyle = lg(ctx, 0, hz, 0, h * 0.82, [[0, '#5a4672'], [1, '#1e2444']]); ctx.fillRect(0, hz, w, h * 0.22);
+    for (let i = 0; i < 90; i++) {
+      const t = R(), y = hz + t * h * 0.22, ww = w * (0.18 - t * 0.12) * (0.4 + R());
+      ctx.fillStyle = `rgba(255,${200 + (R() * 40 | 0)},140,${0.25 + R() * 0.55})`;
+      ctx.fillRect(sx - ww / 2 + (R() - 0.5) * w * 0.1, y, ww, 2 + R() * 4);
+    }
+    ctx.fillStyle = lg(ctx, 0, h * 0.82, 0, h, [[0, '#3b2a2e'], [1, '#1c1418']]); ctx.fillRect(0, h * 0.82, w, h * 0.18);
+    const px = w * 0.3 + shift;
+    circle(ctx, px, h * 0.705, w * 0.024, '#120c10');
+    ctx.fillStyle = '#120c10'; ctx.beginPath(); ctx.roundRect(px - w * 0.032, h * 0.725, w * 0.064, h * 0.1, w * 0.02); ctx.fill();
+    ctx.fillRect(px - w * 0.026, h * 0.8, w * 0.02, h * 0.07); ctx.fillRect(px + w * 0.006, h * 0.8, w * 0.02, h * 0.07);
+  }
+  function cafe(ctx, w, h, R) {
+    ctx.fillStyle = '#8a5a3a'; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 70; i++) {
+      ctx.strokeStyle = R() > 0.5 ? 'rgba(60,35,20,.35)' : 'rgba(190,140,100,.25)'; ctx.lineWidth = 1 + R() * 3;
+      const y0 = R() * h; ctx.beginPath(); ctx.moveTo(0, y0);
+      for (let x = 0; x <= w; x += 40) ctx.lineTo(x, y0 + Math.sin(x / 120 + i) * 6); ctx.stroke();
+    }
+    ctx.save(); ctx.translate(w * 0.2, h * 0.8); ctx.rotate(-0.25); ctx.fillStyle = '#9fb8a0'; ctx.fillRect(-w * 0.15, -h * 0.1, w * 0.3, h * 0.2); ctx.restore();
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+    circle(ctx, w * 0.42, h * 0.48, w * 0.27, '#fbf8f3'); circle(ctx, w * 0.78, h * 0.24, w * 0.12, '#fbf8f3'); ctx.restore();
+    circle(ctx, w * 0.42, h * 0.48, w * 0.2, '#efe8dd');
+    circle(ctx, w * 0.78, h * 0.24, w * 0.09, '#a8714a'); circle(ctx, w * 0.78, h * 0.24, w * 0.075, '#4a2c1d');
+    for (let i = 0; i < 5; i++) ellipse(ctx, w * (0.34 + i * 0.035), h * (0.44 + Math.sin(i) * 0.02), w * 0.06, w * 0.035, 0.6 - i * 0.3, i % 2 ? '#c27d34' : '#dd9f50');
+    for (let i = 0; i < 14; i++) { const x = w * (0.4 + R() * 0.14), y = h * (0.53 + R() * 0.1); circle(ctx, x, y, w * 0.018, '#a8233a'); circle(ctx, x - w * 0.005, y - w * 0.006, w * 0.005, '#f2a0ad'); }
+  }
+  function night(ctx, w, h, R) {
+    ctx.fillStyle = lg(ctx, 0, 0, 0, h, [[0, '#0c0d14'], [1, '#191b2a']]); ctx.fillRect(0, 0, w, h);
+    const cols = ['255,190,90', '255,110,140', '120,170,255', '255,230,160'];
+    for (let i = 0; i < 28; i++) circle(ctx, R() * w, R() * h * 0.6, w * (0.02 + R() * 0.06), `rgba(${cols[i % 4]},${0.12 + R() * 0.25})`);
+    ellipse(ctx, w * 0.5, h * 0.62, w * 0.09, w * 0.11, 0, '#2a2533');
+    ctx.fillStyle = '#2a2533'; ctx.beginPath(); ctx.roundRect(w * 0.32, h * 0.7, w * 0.36, h * 0.35, w * 0.12); ctx.fill();
+  }
+  function mountains(ctx, w, h, R) {
+    ctx.fillStyle = lg(ctx, 0, 0, 0, h * 0.7, [[0, '#4f86d1'], [1, '#d7e8f6']]); ctx.fillRect(0, 0, w, h);
+    circle(ctx, w * 0.78, h * 0.2, h * 0.06, '#fffbe8');
+    const layers = [['#a9b9d2', 0.42, 0.18], ['#7488aa', 0.52, 0.16], ['#41587a', 0.64, 0.12], ['#23392c', 0.78, 0.07]];
+    layers.forEach(([col, base, amp], li) => {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, h);
+      let y = h * base;
+      for (let x = 0; x <= w; x += w / 90) { y += (R() - 0.5) * h * amp * 0.35; y = clamp(y, h * (base - amp), h * (base + amp * 0.5)); ctx.lineTo(x, y); }
+      ctx.lineTo(w, h); ctx.fill();
+      if (li === 0) for (let i = 0; i < 40; i++) circle(ctx, R() * w, h * (base - amp * 0.6) + R() * h * 0.06, w * 0.004, 'rgba(255,255,255,.7)');
+    });
+    for (let i = 0; i < 70; i++) {
+      const x = R() * w, b = h * (0.86 + R() * 0.14), th = h * (0.1 + R() * 0.16);
+      ctx.fillStyle = R() > 0.5 ? '#14251a' : '#1b3123'; ctx.beginPath(); ctx.moveTo(x, b - th); ctx.lineTo(x - th * 0.22, b); ctx.lineTo(x + th * 0.22, b); ctx.fill();
+    }
+  }
+  function shop(ctx, w, h, R) {
+    ctx.fillStyle = '#1f3a5f'; ctx.fillRect(0, 0, w, h);
+    const rows = 5, rh = h / rows;
+    for (let r = 0; r < rows; r++) {
+      let x = w * 0.04;
+      while (x < w * 0.94) {
+        const pw = w * (0.06 + R() * 0.08), ph = rh * (0.4 + R() * 0.45), hue = R() * 360;
+        ctx.fillStyle = `hsl(${hue} 78% 55%)`;
+        if (R() > 0.5) { ctx.beginPath(); ctx.roundRect(x, (r + 1) * rh - ph - rh * 0.08, pw, ph, pw * 0.2); ctx.fill(); }
+        else circle(ctx, x + pw / 2, (r + 1) * rh - rh * 0.08 - pw / 2, pw / 2, `hsl(${hue} 80% 52%)`);
+        ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(x + pw * 0.2, (r + 1) * rh - rh * 0.08 - Math.min(ph, pw) * 0.55, pw * 0.6, Math.max(4, ph * 0.08));
+        x += pw + w * 0.02;
+      }
+      ctx.fillStyle = '#efe4cf'; ctx.fillRect(0, (r + 1) * rh - rh * 0.08, w, rh * 0.05);
+    }
+  }
+  function city(ctx, w, h, R) {
+    ctx.fillStyle = lg(ctx, 0, 0, 0, h, [[0, '#6f9bd6'], [0.55, '#f1a46a'], [1, '#f7c58c']]); ctx.fillRect(0, 0, w, h);
+    let x = -w * 0.05;
+    while (x < w) {
+      const bw = w * (0.12 + R() * 0.16), bh = h * (0.3 + R() * 0.45), top = h - bh;
+      ctx.fillStyle = ['#283246', '#323d55', '#1f2737'][(R() * 3) | 0]; ctx.fillRect(x, top, bw, bh);
+      for (let wy = top + 20; wy < h - 20; wy += 34) for (let wx = x + 12; wx < x + bw - 16; wx += 26)
+        if (R() > 0.45) { ctx.fillStyle = R() > 0.3 ? '#ffd98a' : '#9fb3cc'; ctx.fillRect(wx, wy, 12, 18); }
+      x += bw + w * 0.01;
+    }
+  }
+  function portrait(ctx, w, h) {
+    ctx.fillStyle = '#e4ddd2'; ctx.fillRect(0, 0, w, h);
+    ellipse(ctx, w * 0.5, h * 1.02, w * 0.42, h * 0.3, 0, '#3d5a80');
+    ctx.fillStyle = '#d8a984'; ctx.fillRect(w * 0.44, h * 0.55, w * 0.12, h * 0.16);
+    ellipse(ctx, w * 0.5, h * 0.42, w * 0.17, h * 0.17, 0, '#e2b48f');
+    ctx.fillStyle = '#4a3226'; ctx.beginPath(); ctx.ellipse(w * 0.5, h * 0.34, w * 0.19, h * 0.13, 0, Math.PI, 0); ctx.fill();
+    circle(ctx, w * 0.44, h * 0.42, w * 0.014, '#2b1d16'); circle(ctx, w * 0.56, h * 0.42, w * 0.014, '#2b1d16');
+  }
+
+  function finish(ctx, w, h, R, { gain = 1, lift = 0, noise = 8 } = {}) {
+    const im = ctx.getImageData(0, 0, w, h), d = im.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const nz = (R() - 0.5) * noise * 2;
+      d[i] = d[i] * gain + lift + nz; d[i + 1] = d[i + 1] * gain + lift + nz; d[i + 2] = d[i + 2] * gain + lift + nz;
+    }
+    ctx.putImageData(im, 0, 0);
+  }
+  function blur(canvas, f) {
+    const s = document.createElement('canvas'); s.width = Math.max(1, canvas.width / f | 0); s.height = Math.max(1, canvas.height / f | 0);
+    const sx = s.getContext('2d'); sx.imageSmoothingQuality = 'high'; sx.drawImage(canvas, 0, 0, s.width, s.height);
+    const ctx = canvas.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(s, 0, 0, canvas.width, canvas.height);
+  }
+
+  const SAMPLES = [
+    { name: 'praia-por-do-sol.jpg', w: 1080, h: 1350, seed: 7, draw: (c, w, h, R) => sunset(c, w, h, R) },
+    { name: 'cafe-da-manha.jpg', w: 1080, h: 1080, seed: 11, draw: cafe },
+    { name: 'festa-a-noite.jpg', w: 1080, h: 1350, seed: 5, draw: night, fx: { gain: 0.5, noise: 10 } },
+    { name: 'trilha-montanha.jpg', w: 1920, h: 1080, seed: 3, draw: mountains },
+    { name: 'vitrine-da-loja.jpg', w: 1080, h: 1350, seed: 21, draw: shop },
+    { name: 'praia-por-do-sol-2.jpg', w: 1080, h: 1350, seed: 7, draw: (c, w, h, R) => sunset(c, w, h, R, w * 0.02), blur: 14 },
+    { name: 'centro-stories.jpg', w: 1080, h: 1920, seed: 9, draw: city },
+    { name: 'retrato-claro.jpg', w: 1080, h: 1350, seed: 4, draw: portrait, fx: { gain: 1.35, lift: 70, noise: 4 } },
+  ];
+
+  async function loadSamples() {
+    showMsg('');
+    for (const s of SAMPLES) {
+      const c = document.createElement('canvas'); c.width = s.w; c.height = s.h;
+      const ctx = c.getContext('2d', { willReadFrequently: true }), R = rng(s.seed);
+      s.draw(ctx, s.w, s.h, R);
+      finish(ctx, s.w, s.h, rng(s.seed + 100), s.fx);
+      if (s.blur) blur(c, s.blur);
+      const url = c.toDataURL('image/jpeg', 0.86);
+      const img = await loadImage(url);
+      state.photos.push({ id: nextId++, name: s.name, url, img, w: s.w, h: s.h, sample: true });
+    }
+    await analyzeAll();
+  }
+
+  $('frames').addEventListener('click', (e) => { if (e.target.closest('[data-action="add"]')) $('file').click(); });
+  render();
+})();
+</script>
+</body>
+</html>
